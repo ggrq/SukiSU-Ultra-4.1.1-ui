@@ -1085,11 +1085,22 @@ private fun ModuleList(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    stringResource(R.string.module_empty),
-                    textAlign = TextAlign.Center,
-                    color = Color.Gray,
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "峡谷空空如也",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFE8B84B),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "暂无装备模块 · 前往仓库下载魔道之书",
+                        fontSize = 13.sp,
+                        color = Color(0xFF8A94AD),
+                    )
+                }
             }
         }
 
