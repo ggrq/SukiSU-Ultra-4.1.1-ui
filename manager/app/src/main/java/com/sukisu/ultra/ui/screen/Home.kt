@@ -208,8 +208,6 @@ fun HomePager(
                         UpdateCard(themeMode)
                     }
                     InfoCard()
-                    DonateCard()
-                    LearnMoreCard()
                 }
                 Spacer(Modifier.height(bottomInnerPadding))
             }
@@ -728,73 +726,11 @@ fun WarningCard(
 }
 
 @Composable
-fun LearnMoreCard() {
-    val uriHandler = LocalUriHandler.current
-    val url = stringResource(R.string.home_learn_kernelsu_url)
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-    ) {
-        BasicComponent(
-            title = stringResource(R.string.home_learn_kernelsu),
-            summary = stringResource(R.string.home_click_to_learn_kernelsu),
-            endActions = {
-                Icon(
-                    imageVector = MiuixIcons.Link,
-                    tint = colorScheme.onSurface,
-                    contentDescription = null
-                )
-            },
-            onClick = {
-                uriHandler.openUri(url)
-            }
-        )
-    }
-}
-
-@Composable
-fun DonateCard() {
-    val uriHandler = LocalUriHandler.current
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-    ) {
-        BasicComponent(
-            title = stringResource(R.string.home_support_title),
-            summary = stringResource(R.string.home_support_content),
-            endActions = {
-                Icon(
-                    imageVector = MiuixIcons.Link,
-                    tint = colorScheme.onSurface,
-                    contentDescription = null
-                )
-            },
-            onClick = {
-                uriHandler.openUri("https://patreon.com/weishu")
-            },
-            insideMargin = PaddingValues(18.dp)
-        )
-    }
-}
-
-@Composable
 private fun InfoCard() {
     val manualHookText = stringResource(R.string.manual_hook)
     val inlineHookText = stringResource(R.string.inline_hook)
-    val tracepointHookText = stringResource(R.string.tracepoint_hook)
-    val unknownHookText = stringResource(R.string.selinux_status_unknown)
     val susfsInfo = rememberSusfsInfo(manualHookText, inlineHookText)
     val isSusfsSupported = susfsInfo.status == SusfsStatus.Supported
-    val hookTypeLabel = remember(manualHookText, inlineHookText, tracepointHookText) {
-        val localized = when (val rawType = Natives.getHookType()) {
-            "Manual" -> manualHookText
-            "Tracepoint" -> tracepointHookText
-            else -> rawType
-        }
-        localized.ifBlank { unknownHookText }
-    }
 
     @Composable
     fun InfoText(
@@ -839,19 +775,10 @@ private fun InfoCard() {
                     title = stringResource(R.string.home_susfs_version),
                     content = susfsInfo.detail
                 )
-            } else {
-                InfoText(
-                    title = stringResource(R.string.hook_type),
-                    content = hookTypeLabel
-                )
             }
             InfoText(
                 title = stringResource(R.string.home_selinux_status),
                 content = getSELinuxStatus(),
-            )
-            InfoText(
-                title = stringResource(R.string.home_fingerprint),
-                content = Build.FINGERPRINT,
                 bottomPadding = 0.dp
             )
         }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,11 +35,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
@@ -51,6 +52,8 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
+import com.sukisu.ultra.ui.util.HonorApi
+import com.sukisu.ultra.ui.util.rememberNetworkImage
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -61,37 +64,38 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
-// 王者荣耀英雄图鉴（内置静态资料，纯 UI 扩展，不影响核心功能）
-private data class HonorHero(
+// 王者荣耀英雄图鉴：优先加载官方 API 真实数据，失败时使用内置英雄兜底
+private data class HeroData(
     val name: String,
     val title: String,
-    val role: String,
-    val camp: String,
-    val desc: String,
-    val skill: String,
+    val typeLabel: String,
+    val skins: List<String>,
+    val avatarUrl: String? = null,
+    val detailUrl: String? = null,
 )
 
-private val honorHeroes = listOf(
-    HonorHero("李白", "青莲剑仙", "刺客/战士", "大唐", "十步杀一人，千里不留行。", "将进酒 / 青莲剑歌"),
-    HonorHero("韩信", "国士无双", "刺客", "稷下", "暗度陈仓，偷家之王。", "背水一战 / 国士无双"),
-    HonorHero("貂蝉", "绝世舞姬", "法师", "长安", "闭月之姿，乱世惊鸿。", "缘·心结 / 绽·风华"),
-    HonorHero("鲁班七号", "机关造物", "射手", "稷下", "智商二百五，火力全开。", "空中支援 / 无敌鲨嘴炮"),
-    HonorHero("孙尚香", "大小姐驾到", "射手", "吴", "翻滚突袭，一炮入魂。", "翻滚突袭 / 究极弩炮"),
-    HonorHero("亚瑟", "圣骑之力", "战士/坦克", "圣殿", "正义的惩戒，永不后退。", "誓约之盾 / 圣剑裁决"),
-    HonorHero("后羿", "半神之弓", "射手", "落日", "灼日之矢，逐日之弓。", "多重箭矢 / 灼日之矢"),
-    HonorHero("安琪拉", "暗夜萝莉", "法师", "学院", "火球轰鸣，正义的魔法。", "混沌火种 / 炽热光辉"),
-    HonorHero("兰陵王", "暗影猎手", "刺客", "西域", "隐身突袭，一刀毙命。", "隐匿 / 秘技·影袭"),
-    HonorHero("妲己", "魅惑之狐", "法师", "稷下", "魅惑众生，秒人于无形。", "灵魂冲击 / 女王崇拜"),
-    HonorHero("铠", "破灭刀锋", "战士", "海都", "以绝望挥剑，着逝者为铠。", "回旋之刃 / 不灭魔躯"),
-    HonorHero("花木兰", "传说之刃", "战士/刺客", "长城", "长城在，故乡就在。", "空裂斩 / 绽放刀锋"),
-    HonorHero("吕布", "无双之魔", "战士/坦克", "群雄", "我的力量，源自太阳。", "方天画斩 / 魔神降世"),
-    HonorHero("孙悟空", "齐天大圣", "刺客/战士", "西游", "俺老孙来也！", "护身咒法 / 如意金箍"),
-    HonorHero("小乔", "恋之微风", "法师", "江东", "小乔要努力变强！", "绽放之舞 / 星华缭乱"),
-    HonorHero("王昭君", "冰雪之华", "法师", "长安", "凛冬已至。", "凋零冰晶 / 凛冬已至"),
+private val fallbackHeroes = listOf(
+    HeroData("李白", "青莲剑仙", "刺客/战士", listOf("将进酒", "青莲剑歌")),
+    HeroData("韩信", "国士无双", "刺客", listOf("背水一战", "国士无双")),
+    HeroData("貂蝉", "绝世舞姬", "法师", listOf("缘·心结", "绽·风华")),
+    HeroData("鲁班七号", "机关造物", "射手", listOf("空中支援", "无敌鲨嘴炮")),
+    HeroData("孙尚香", "大小姐驾到", "射手", listOf("翻滚突袭", "究极弩炮")),
+    HeroData("亚瑟", "圣骑之力", "战士/坦克", listOf("誓约之盾", "圣剑裁决")),
+    HeroData("后羿", "半神之弓", "射手", listOf("多重箭矢", "灼日之矢")),
+    HeroData("安琪拉", "暗夜萝莉", "法师", listOf("混沌火种", "炽热光辉")),
+    HeroData("兰陵王", "暗影猎手", "刺客", listOf("隐匿", "秘技·影袭")),
+    HeroData("妲己", "魅惑之狐", "法师", listOf("灵魂冲击", "女王崇拜")),
+    HeroData("铠", "破灭刀锋", "战士", listOf("回旋之刃", "不灭魔躯")),
+    HeroData("花木兰", "传说之刃", "战士/刺客", listOf("空裂斩", "绽放刀锋")),
+    HeroData("吕布", "无双之魔", "战士/坦克", listOf("方天画斩", "魔神降世")),
+    HeroData("孙悟空", "齐天大圣", "刺客/战士", listOf("护身咒法", "如意金箍")),
+    HeroData("小乔", "恋之微风", "法师", listOf("绽放之舞", "星华缭乱")),
+    HeroData("王昭君", "冰雪之华", "法师", listOf("凋零冰晶", "凛冬已至")),
 )
 
 private val honorRanks = listOf(
@@ -149,14 +153,37 @@ private fun HonorDiamondIcon(
 @Composable
 fun HonorGuideScreen() {
     val navigator = LocalNavigator.current
+    val uriHandler = LocalUriHandler.current
     val scrollBehavior = MiuixScrollBehavior()
     val hazeState = remember { HazeState() }
     val hazeStyle = HazeStyle(
         backgroundColor = colorScheme.surface,
         tint = HazeTint(colorScheme.surface.copy(0.8f))
     )
+
+    var heroList by remember { mutableStateOf(fallbackHeroes) }
+    var loading by remember { mutableStateOf(true) }
+    var fromApi by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val api = HonorApi.fetchHeroList()
+        if (api.isNotEmpty()) {
+            heroList = api.map {
+                HeroData(
+                    name = it.cname,
+                    title = it.title,
+                    typeLabel = HonorApi.heroTypeName(it.heroType),
+                    skins = HonorApi.skinList(it.skinName),
+                    avatarUrl = HonorApi.heroAvatarUrl(it.ename),
+                    detailUrl = HonorApi.heroDetailUrl(it.ename),
+                )
+            }
+            fromApi = true
+        }
+        loading = false
+    }
+
     var quoteIndex by remember { mutableIntStateOf((0..honorQuotes.lastIndex).random()) }
-    var randomHero by remember { mutableStateOf<HonorHero?>(null) }
+    var randomHero by remember { mutableStateOf<HeroData?>(null) }
 
     Scaffold(
         topBar = {
@@ -238,7 +265,8 @@ fun HonorGuideScreen() {
                         }
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "共 ${honorHeroes.size} 位英雄 · 定位一览 · 技能速查",
+                            text = if (fromApi) "官方数据 · 共 ${heroList.size} 位英雄 · 点击查看详情"
+                            else "共 ${heroList.size} 位英雄 · 定位一览 · 技能速查",
                             color = Color(0xFFB8C4DC),
                             fontSize = 12.sp
                         )
@@ -246,9 +274,37 @@ fun HonorGuideScreen() {
                 }
             }
 
-            items(honorHeroes.size) { index ->
-                val hero = honorHeroes[index]
-                HonorHeroCard(hero)
+            if (loading) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.defaultColors(color = Color(0xFF152A4D))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            HonorDiamondIcon(16)
+                            Spacer(Modifier.size(10.dp))
+                            Text(
+                                text = "正在召唤峡谷英雄…",
+                                fontSize = 14.sp,
+                                color = Color(0xFFB8C4DC)
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(heroList.size) { index ->
+                    val hero = heroList[index]
+                    HonorHeroCard(
+                        hero = hero,
+                        clickable = fromApi && hero.detailUrl != null,
+                        onClick = { hero.detailUrl?.let { uriHandler.openUri(it) } }
+                    )
+                }
             }
 
             item {
@@ -281,30 +337,42 @@ fun HonorGuideScreen() {
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color(0x33E8B84B))
-                                    .clickable { randomHero = honorHeroes.random() }
+                                    .clickable { randomHero = heroList.random() }
                                     .padding(horizontal = 14.dp, vertical = 6.dp)
                             )
                         }
                         Spacer(Modifier.height(12.dp))
                         if (randomHero != null) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            Brush.linearGradient(
-                                                listOf(Color(0xFFE8B84B), Color(0xFF9C6B12))
-                                            )
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = randomHero!!.name.take(1),
-                                        color = Color(0xFF0A1220),
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.Bold
+                                val avatar = randomHero!!.avatarUrl?.let { rememberNetworkImage(it) }
+                                if (avatar != null) {
+                                    Image(
+                                        bitmap = avatar,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(10.dp)),
+                                        contentScale = ContentScale.Crop
                                     )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(Color(0xFFE8B84B), Color(0xFF9C6B12))
+                                                )
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = randomHero!!.name.take(1),
+                                            color = Color(0xFF0A1220),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                                 Spacer(Modifier.size(12.dp))
                                 Column {
@@ -315,7 +383,7 @@ fun HonorGuideScreen() {
                                         color = Color(0xFFFFD97A)
                                     )
                                     Text(
-                                        text = "${randomHero!!.role} · ${randomHero!!.skill}",
+                                        text = "${randomHero!!.typeLabel} · 皮肤 ${randomHero!!.skins.size} 款",
                                         fontSize = 12.sp,
                                         color = Color(0xFFB8C4DC)
                                     )
@@ -379,6 +447,7 @@ fun HonorGuideScreen() {
             }
 
             item {
+                // 每日荣耀箴言
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.defaultColors(
@@ -415,6 +484,7 @@ fun HonorGuideScreen() {
                                 .align(Alignment.End)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0x22E8B84B))
+                                .clickable { quoteIndex = (0..honorQuotes.lastIndex).random() }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
@@ -428,10 +498,15 @@ fun HonorGuideScreen() {
 }
 
 @Composable
-private fun HonorHeroCard(hero: HonorHero) {
+private fun HonorHeroCard(
+    hero: HeroData,
+    clickable: Boolean,
+    onClick: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        showIndication = false,
+        onClick = if (clickable) onClick else null,
+        showIndication = clickable,
         pressFeedbackType = PressFeedbackType.Sink
     ) {
         Row(
@@ -440,22 +515,36 @@ private fun HonorHeroCard(hero: HonorHero) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 英雄徽章（菱形 + 首字）
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFFE8B84B), Color(0xFF9C6B12)))
-                        .let { it }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = hero.name.take(1),
-                    color = Color(0xFF0A1220),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+            // 英雄头像（网络图或首字徽章）
+            val avatar = hero.avatarUrl?.let { rememberNetworkImage(it) }
+            if (avatar != null) {
+                Image(
+                    bitmap = avatar,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFFE8B84B), Color(0xFF9C6B12))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = hero.name.take(1),
+                        color = Color(0xFF0A1220),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             Spacer(Modifier.size(14.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -475,21 +564,27 @@ private fun HonorHeroCard(hero: HonorHero) {
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${hero.role} · ${hero.camp}",
+                    text = hero.typeLabel,
                     fontSize = 12.sp,
                     color = Color(0xFF8A94AD)
                 )
                 Spacer(Modifier.height(6.dp))
+                val skins = hero.skins
                 Text(
-                    text = hero.desc,
-                    fontSize = 13.sp,
-                    color = colorScheme.onSurfaceVariantSummary
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "技能：${hero.skill}",
+                    text = if (skins.size > 3) {
+                        "皮肤 ${skins.size} 款：${skins.take(3).joinToString(" / ")} 等"
+                    } else {
+                        "皮肤：${skins.joinToString(" / ")}"
+                    },
                     fontSize = 12.sp,
                     color = Color(0xFFB8C4DC)
+                )
+            }
+            if (clickable) {
+                Icon(
+                    imageVector = MiuixIcons.Link,
+                    tint = colorScheme.onSurface,
+                    contentDescription = null
                 )
             }
         }
