@@ -58,6 +58,7 @@ import com.sukisu.ultra.ui.screen.AboutScreen
 import com.sukisu.ultra.ui.screen.AppProfileScreen
 import com.sukisu.ultra.ui.screen.AppProfileTemplateScreen
 import com.sukisu.ultra.ui.screen.ExecuteModuleActionScreen
+import com.sukisu.ultra.ui.screen.BattleQueryScreen
 import com.sukisu.ultra.ui.screen.HonorGuideScreen
 import com.sukisu.ultra.ui.screen.FlashScreen
 import com.sukisu.ultra.ui.screen.HomePager
@@ -169,6 +170,7 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.Main> { MainScreen() }
                                 entry<Route.About> { AboutScreen() }
                                 entry<Route.HonorGuide> { HonorGuideScreen() }
+                                entry<Route.BattleQuery> { BattleQueryScreen() }
                                 entry<Route.AppProfileTemplate> { AppProfileTemplateScreen() }
                                 entry<Route.TemplateEditor> { key -> TemplateEditorScreen(key.template, key.readOnly) }
                                 entry<Route.AppProfile> { key -> AppProfileScreen(key.packageName) }

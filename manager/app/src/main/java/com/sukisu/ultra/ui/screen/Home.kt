@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -167,7 +168,7 @@ fun HomePager(
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     if (isManager && Natives.requireNewKernel()) {
                         WarningCard(
@@ -200,8 +201,9 @@ fun HomePager(
                         themeMode = themeMode
                     )
 
-                    HonorGuideEntryCard(
-                        onClick = { navigator.push(Route.HonorGuide) }
+                    HonorToolsSection(
+                        onClickGuide = { navigator.push(Route.HonorGuide) },
+                        onClickBattle = { navigator.push(Route.BattleQuery) }
                     )
 
                     if (checkUpdate) {
@@ -223,11 +225,12 @@ private fun HonorHeroBanner() {
         targetValue = 2f * PI.toFloat(),
         animationSpec = infiniteRepeatable(tween(durationMillis = 8000, easing = LinearEasing))
     )
+    val sweepPhase = ((phase / (2f * PI.toFloat())) % 1f).coerceIn(0f, 1f)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(170.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .height(196.dp)
+            .clip(RoundedCornerShape(28.dp))
     ) {
         Image(
             painter = painterResource(R.drawable.honor_bg),
@@ -240,36 +243,70 @@ private fun HonorHeroBanner() {
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0x33060B18), Color(0xE60A1220))
+                        listOf(Color(0x44060B18), Color(0xE60A1220))
                     )
                 )
         )
-        // 金色光粒子浮动层
+        // 金色流光扫过层
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val sweepX = sweepPhase * (size.width + 480.dp.toPx()) - 240.dp.toPx()
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    0f to Color.Transparent,
+                    0.3f to Color(0x22E8B84B),
+                    0.5f to Color(0x3DE8B84B),
+                    0.7f to Color(0x22E8B84B),
+                    1f to Color.Transparent,
+                ),
+                topLeft = Offset(sweepX, 0f),
+                size = Size(260.dp.toPx(), size.height)
+            )
+        }
+        // 金色光粒子浮动层（双层）
         Canvas(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-            repeat(12) { i ->
-                val x = size.width * ((i * 0.085f + phase * 0.015f) % 1f)
-                val y = size.height * (0.2f + 0.16f * sin(phase + i * 1.7f))
-                val alpha = 0.12f + 0.1f * sin(phase * 1.3f + i)
-                val r = (1.4f + 1.1f * sin(phase + i * 0.9f)).dp.toPx()
+            repeat(18) { i ->
+                val x = size.width * ((i * 0.055f + phase * 0.012f) % 1f)
+                val y = size.height * (0.15f + 0.22f * sin(phase + i * 1.7f))
+                val alpha = 0.08f + 0.12f * sin(phase * 1.3f + i)
+                val r = (1.2f + 1.6f * sin(phase + i * 0.9f)).dp.toPx()
                 drawCircle(
                     color = Color(0xFFE8B84B),
                     radius = r.coerceAtLeast(1.dp.toPx()),
                     center = Offset(x, y),
-                    alpha = alpha.coerceIn(0f, 0.45f)
+                    alpha = alpha.coerceIn(0f, 0.5f)
+                )
+            }
+            repeat(8) { i ->
+                val x = size.width * ((i * 0.13f + phase * 0.008f + 0.05f) % 1f)
+                val y = size.height * (0.5f + 0.3f * sin(phase * 0.8f + i * 2.1f))
+                drawCircle(
+                    color = Color(0xFF9BD1FF),
+                    radius = (0.8f + 0.7f * sin(phase + i)).dp.toPx().coerceAtLeast(0.8.dp.toPx()),
+                    center = Offset(x, y),
+                    alpha = 0.08f
                 )
             }
         }
+        // 右上角王者荣耀风格菱形徽记（带外圈光晕）
         Canvas(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 右上角王者荣耀风格菱形徽记
-            val diamondSize = 100.dp.toPx()
-            val centerX = size.width - 74.dp.toPx()
-            val centerY = 74.dp.toPx()
+            val diamondSize = 110.dp.toPx()
+            val centerX = size.width - 80.dp.toPx()
+            val centerY = 78.dp.toPx()
+            // 外圈光晕
+            drawCircle(
+                color = Color(0x22E8B84B),
+                radius = diamondSize * 0.85f,
+                center = Offset(centerX, centerY)
+            )
+            drawCircle(
+                color = Color(0x11E8B84B),
+                radius = diamondSize * 1.25f,
+                center = Offset(centerX, centerY)
+            )
             val path = Path().apply {
                 moveTo(centerX, centerY - diamondSize / 2)
                 lineTo(centerX + diamondSize / 2, centerY)
@@ -277,7 +314,7 @@ private fun HonorHeroBanner() {
                 lineTo(centerX - diamondSize / 2, centerY)
                 close()
             }
-            drawPath(path, color = Color(0x22E8B84B))
+            drawPath(path, color = Color(0x2AE8B84B))
             drawPath(path, color = Color(0xFFE8B84B), style = Stroke(width = 3.dp.toPx()))
             // 菱形内剑刃
             val blade = Path().apply {
@@ -307,33 +344,133 @@ private fun HonorHeroBanner() {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(horizontal = 18.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp, vertical = 18.dp)
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Canvas(modifier = Modifier.size(14.dp)) {
+                    val c = center
+                    val s = size.minDimension * 0.42f
+                    val p = Path().apply {
+                        moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                    }
+                    drawPath(p, color = Color(0xFFE8B84B))
+                }
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    text = "召唤师 · 欢迎回到峡谷",
+                    color = Color(0x99E8B84B),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.sp
+                )
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = "王者荣耀 · KernelSU",
                 color = Color(0xFFE8B84B),
-                fontSize = 26.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "HONOR OF KERNEL · 荣耀守护者 · 峡谷模式",
                 color = Color(0xFFB8C4DC),
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                letterSpacing = 0.5.sp
             )
         }
+        // 底部金色能量带
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color(0x99E8B84B),
+                            Color(0xFFE8B84B),
+                            Color(0x99E8B84B),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
     }
 }
 
 @Composable
-private fun HonorGuideEntryCard(
-    onClick: () -> Unit
+private fun HonorToolsSection(
+    onClickGuide: () -> Unit,
+    onClickBattle: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Canvas(modifier = Modifier.size(14.dp)) {
+                val c = center
+                val s = size.minDimension * 0.42f
+                val p = Path().apply {
+                    moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                }
+                drawPath(p, color = Color(0xFFE8B84B))
+            }
+            Spacer(Modifier.size(7.dp))
+            Text(
+                text = "荣耀工具 · 王者专区",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFE8B84B)
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "峡谷特供",
+                fontSize = 10.sp,
+                color = Color(0x99E8B84B),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0x22E8B84B))
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
+            )
+        }
+        HonorToolCard(
+            title = "荣耀图鉴",
+            subtitle = "英雄定位 · 皮肤列表 · 官方详情",
+            accent = Color(0xFFE8B84B),
+            onClick = onClickGuide
+        )
+        HonorToolCard(
+            title = "峡谷战绩查询",
+            subtitle = "召唤师搜索 · UID · 战绩总结图",
+            accent = Color(0xFF7FB5FF),
+            onClick = onClickBattle
+        )
+    }
+}
+
+@Composable
+private fun HonorToolCard(
+    title: String,
+    subtitle: String,
+    accent: Color,
+    onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
         showIndication = true,
-        pressFeedbackType = PressFeedbackType.Tilt
+        pressFeedbackType = PressFeedbackType.Tilt,
+        colors = CardDefaults.defaultColors(
+            color = Color(0xFF152A4D)
+        )
     ) {
         Row(
             modifier = Modifier
@@ -341,39 +478,38 @@ private fun HonorGuideEntryCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Canvas(modifier = Modifier.size(44.dp)) {
-                val c = center
-                val s = size.minDimension * 0.42f
-                val path = Path().apply {
-                    moveTo(c.x, c.y - s)
-                    lineTo(c.x + s, c.y)
-                    lineTo(c.x, c.y + s)
-                    lineTo(c.x - s, c.y)
-                    close()
+            // 渐变底菱形图标
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.linearGradient(listOf(accent, Color(0xFF9C6B12)))
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(26.dp)) {
+                    val c = center
+                    val s = size.minDimension * 0.42f
+                    val p = Path().apply {
+                        moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                    }
+                    drawPath(p, color = Color(0xFF0A1220))
                 }
-                drawPath(path, color = Color(0xFFE8B84B))
-                val inner = Path().apply {
-                    moveTo(c.x, c.y - s * 0.45f)
-                    lineTo(c.x + s * 0.28f, c.y)
-                    lineTo(c.x, c.y + s * 0.45f)
-                    lineTo(c.x - s * 0.28f, c.y)
-                    close()
-                }
-                drawPath(inner, color = Color(0xFF0A1220))
             }
             Spacer(Modifier.size(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "荣耀图鉴",
-                    fontSize = 17.sp,
+                    text = title,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFE8B84B)
+                    color = accent
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
-                    text = "王者英雄 · 定位一览 · 荣耀小工具",
+                    text = subtitle,
                     fontSize = 12.sp,
-                    color = colorScheme.onSurfaceVariantSummary
+                    color = Color(0xFFB8C4DC)
                 )
             }
             Icon(
@@ -549,10 +685,28 @@ private fun StatusCard(
                                     .fillMaxSize()
                                     .padding(all = 16.dp)
                             ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Canvas(modifier = Modifier.size(10.dp)) {
+                                        val c = center
+                                        val s = size.minDimension * 0.42f
+                                        val p = Path().apply {
+                                            moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                                        }
+                                        drawPath(p, color = Color(0xFFE8B84B))
+                                    }
+                                    Spacer(Modifier.size(5.dp))
+                                    Text(
+                                        text = "运行状态",
+                                        fontSize = 10.sp,
+                                        color = Color(0xCCE8B84B),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                Spacer(Modifier.height(6.dp))
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
                                     text = workingText,
-                                    fontSize = 20.sp,
+                                    fontSize = 19.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Spacer(Modifier.height(2.dp))
@@ -561,6 +715,18 @@ private fun StatusCard(
                                     text = stringResource(R.string.home_working_version, ksuVersion),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0x33E8B84B), Color(0xFFE8B84B), Color(0x33E8B84B))
+                                            )
+                                        )
                                 )
                             }
                         }
@@ -593,9 +759,21 @@ private fun StatusCard(
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
                                     text = getSuperuserCount().toString(),
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = Color(0xFFE8B84B),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0x33E8B84B), Color(0xFFE8B84B), Color(0x33E8B84B))
+                                            )
+                                        )
                                 )
                             }
                         }
@@ -623,9 +801,21 @@ private fun StatusCard(
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
                                     text = getModuleCount().toString(),
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = Color(0xFFE8B84B),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(3.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0x33E8B84B), Color(0xFFE8B84B), Color(0x33E8B84B))
+                                            )
+                                        )
                                 )
                             }
                         }
@@ -738,12 +928,23 @@ private fun InfoCard() {
         content: String,
         bottomPadding: Dp = 24.dp
     ) {
-        Text(
-            text = title,
-            fontSize = MiuixTheme.textStyles.headline1.fontSize,
-            fontWeight = FontWeight.Medium,
-            color = colorScheme.onSurface
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Canvas(modifier = Modifier.size(8.dp)) {
+                val c = center
+                val s = size.minDimension * 0.42f
+                val p = Path().apply {
+                    moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                }
+                drawPath(p, color = Color(0xFFE8B84B))
+            }
+            Spacer(Modifier.size(6.dp))
+            Text(
+                text = title,
+                fontSize = MiuixTheme.textStyles.headline1.fontSize,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFFE8B84B)
+            )
+        }
         Text(
             text = content,
             fontSize = MiuixTheme.textStyles.body2.fontSize,

@@ -48,6 +48,10 @@ sealed interface Route : NavKey, Parcelable {
 
     @Parcelize
     @Serializable
+    data object BattleQuery : Route
+
+    @Parcelize
+    @Serializable
     data object AppProfileTemplate : Route
 
     @Parcelize
