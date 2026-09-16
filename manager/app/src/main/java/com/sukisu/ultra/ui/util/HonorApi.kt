@@ -1,6 +1,5 @@
 package com.sukisu.ultra.ui.util
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,25 +11,23 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.charset.Charset
 
 /**
  * 王者荣耀官方英雄数据（来源 pvp.qq.com 公开接口）
  * 仅供个人 UI 扩展展示使用。
  */
-@Serializable
 data class HonorHeroApi(
     val ename: Int = 0,
     val cname: String = "",
-    @SerialName("id_name") val idName: String = "",
+    val idName: String = "",
     val title: String = "",
-    @SerialName("skin_name") val skinName: String = "",
-    @SerialName("hero_type") val heroType: Int = 0,
-    @SerialName("hero_type2") val heroType2: Int = 0,
+    val skinName: String = "",
+    val heroType: Int = 0,
+    val heroType2: Int = 0,
     val roles: String = "",
 )
 
@@ -38,11 +35,6 @@ object HonorApi {
     private const val HERO_LIST_URL = "https://pvp.qq.com/web201605/js/herolist.json"
     const val HERO_DETAIL_URL = "https://pvp.qq.com/web201605/herodetail/"
     private const val HERO_IMG_BASE = "https://game.gtimg.cn/images/yxzj/img201606/heroimg/"
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        coerceInputValues = true
-    }
 
     /** 英雄头像 URL */
     fun heroAvatarUrl(ename: Int): String = "$HERO_IMG_BASE$ename/$ename.jpg"
@@ -70,8 +62,23 @@ object HonorApi {
         runCatching {
             val bytes = downloadBytes(HERO_LIST_URL)
             val text = decodeJsonText(bytes)
-            val list = json.decodeFromString<List<HonorHeroApi>>(text)
-            list.filter { it.ename > 0 && it.cname.isNotBlank() }
+            val arr = JSONArray(text)
+            val list = ArrayList<HonorHeroApi>(arr.length())
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val hero = HonorHeroApi(
+                    ename = o.optInt("ename", 0),
+                    cname = o.optString("cname", ""),
+                    idName = o.optString("id_name", ""),
+                    title = o.optString("title", ""),
+                    skinName = o.optString("skin_name", ""),
+                    heroType = o.optInt("hero_type", 0),
+                    heroType2 = o.optInt("hero_type2", 0),
+                    roles = o.optString("roles", ""),
+                )
+                if (hero.ename > 0 && hero.cname.isNotBlank()) list.add(hero)
+            }
+            list
         }.getOrElse { emptyList() }
     }
 
