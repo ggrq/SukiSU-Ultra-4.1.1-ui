@@ -6,6 +6,11 @@ import android.system.Os
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -72,6 +77,8 @@ import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.PI
+import kotlin.math.sin
 import com.sukisu.ultra.KernelVersion
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
@@ -212,10 +219,16 @@ fun HomePager(
 
 @Composable
 private fun HonorHeroBanner() {
+    val transition = rememberInfiniteTransition()
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2f * PI.toFloat(),
+        animationSpec = infiniteRepeatable(tween(durationMillis = 8000, easing = LinearEasing))
+    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .height(170.dp)
             .clip(RoundedCornerShape(24.dp))
     ) {
         Image(
@@ -233,14 +246,32 @@ private fun HonorHeroBanner() {
                     )
                 )
         )
+        // 金色光粒子浮动层
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            repeat(12) { i ->
+                val x = size.width * ((i * 0.085f + phase * 0.015f) % 1f)
+                val y = size.height * (0.2f + 0.16f * sin(phase + i * 1.7f))
+                val alpha = 0.12f + 0.1f * sin(phase * 1.3f + i)
+                val r = (1.4f + 1.1f * sin(phase + i * 0.9f)).dp.toPx()
+                drawCircle(
+                    color = Color(0xFFE8B84B),
+                    radius = r.coerceAtLeast(1.dp.toPx()),
+                    center = Offset(x, y),
+                    alpha = alpha.coerceIn(0f, 0.45f)
+                )
+            }
+        }
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
         ) {
             // 右上角王者荣耀风格菱形徽记
-            val diamondSize = 96.dp.toPx()
-            val centerX = size.width - 70.dp.toPx()
-            val centerY = 70.dp.toPx()
+            val diamondSize = 100.dp.toPx()
+            val centerX = size.width - 74.dp.toPx()
+            val centerY = 74.dp.toPx()
             val path = Path().apply {
                 moveTo(centerX, centerY - diamondSize / 2)
                 lineTo(centerX + diamondSize / 2, centerY)
@@ -259,6 +290,21 @@ private fun HonorHeroBanner() {
                 close()
             }
             drawPath(blade, color = Color(0xFFE8B84B))
+            // 菱形两侧小尖
+            val leftSpike = Path().apply {
+                moveTo(centerX - diamondSize * 0.72f, centerY)
+                lineTo(centerX - diamondSize * 0.52f, centerY - diamondSize * 0.14f)
+                lineTo(centerX - diamondSize * 0.52f, centerY + diamondSize * 0.14f)
+                close()
+            }
+            val rightSpike = Path().apply {
+                moveTo(centerX + diamondSize * 0.72f, centerY)
+                lineTo(centerX + diamondSize * 0.52f, centerY - diamondSize * 0.14f)
+                lineTo(centerX + diamondSize * 0.52f, centerY + diamondSize * 0.14f)
+                close()
+            }
+            drawPath(leftSpike, color = Color(0xFFE8B84B))
+            drawPath(rightSpike, color = Color(0xFFE8B84B))
         }
         Column(
             modifier = Modifier
@@ -266,14 +312,14 @@ private fun HonorHeroBanner() {
                 .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
             Text(
-                text = "KernelSU 荣耀版",
+                text = "王者荣耀 · KernelSU",
                 color = Color(0xFFE8B84B),
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "HONOR OF KERNEL · 荣耀守护者",
+                text = "HONOR OF KERNEL · 荣耀守护者 · 峡谷模式",
                 color = Color(0xFFB8C4DC),
                 fontSize = 12.sp
             )
@@ -595,18 +641,21 @@ private fun StatusCard(
                         if (kernelVersion.isGKI()) onClickInstall()
                     },
                     showIndication = true,
-                    pressFeedbackType = PressFeedbackType.Sink
+                    pressFeedbackType = PressFeedbackType.Tilt,
+                    colors = CardDefaults.defaultColors(
+                        color = if (isInDarkTheme(themeMode)) Color(0xFF152A4D) else Color(0xFFF5EBD3)
+                    )
                 ) {
                     BasicComponent(
-                        title = stringResource(R.string.home_not_installed),
-                        summary = stringResource(R.string.home_click_to_install),
+                        title = "召唤师，内核尚未部署",
+                        summary = "点击进入安装 · 荣耀由此开始",
                         startAction = {
                             Icon(
                                 Icons.Rounded.ErrorOutline,
-                                stringResource(R.string.home_not_installed),
+                                "内核尚未部署",
                                 modifier = Modifier
                                     .padding(end = 16.dp),
-                                tint = colorScheme.onBackground,
+                                tint = Color(0xFFE8B84B),
                             )
                         }
                     )
@@ -619,18 +668,21 @@ private fun StatusCard(
                         if (kernelVersion.isGKI()) onClickInstall()
                     },
                     showIndication = true,
-                    pressFeedbackType = PressFeedbackType.Sink
+                    pressFeedbackType = PressFeedbackType.Tilt,
+                    colors = CardDefaults.defaultColors(
+                        color = if (isInDarkTheme(themeMode)) Color(0xFF152A4D) else Color(0xFFF5EBD3)
+                    )
                 ) {
                     BasicComponent(
-                        title = stringResource(R.string.home_unsupported),
+                        title = "峡谷信号受阻 · 设备暂不支持",
                         summary = stringResource(R.string.home_unsupported_reason),
                         startAction = {
                             Icon(
                                 Icons.Rounded.ErrorOutline,
-                                stringResource(R.string.home_unsupported),
+                                "暂不支持",
                                 modifier = Modifier
                                     .padding(end = 16.dp),
-                                tint = colorScheme.onBackground,
+                                tint = Color(0xFFC0392B),
                             )
                         }
                     )

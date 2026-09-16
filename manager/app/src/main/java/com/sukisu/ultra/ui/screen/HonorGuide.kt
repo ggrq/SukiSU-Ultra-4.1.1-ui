@@ -3,6 +3,7 @@ package com.sukisu.ultra.ui.screen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +60,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
@@ -83,6 +86,24 @@ private val honorHeroes = listOf(
     HonorHero("安琪拉", "暗夜萝莉", "法师", "学院", "火球轰鸣，正义的魔法。", "混沌火种 / 炽热光辉"),
     HonorHero("兰陵王", "暗影猎手", "刺客", "西域", "隐身突袭，一刀毙命。", "隐匿 / 秘技·影袭"),
     HonorHero("妲己", "魅惑之狐", "法师", "稷下", "魅惑众生，秒人于无形。", "灵魂冲击 / 女王崇拜"),
+    HonorHero("铠", "破灭刀锋", "战士", "海都", "以绝望挥剑，着逝者为铠。", "回旋之刃 / 不灭魔躯"),
+    HonorHero("花木兰", "传说之刃", "战士/刺客", "长城", "长城在，故乡就在。", "空裂斩 / 绽放刀锋"),
+    HonorHero("吕布", "无双之魔", "战士/坦克", "群雄", "我的力量，源自太阳。", "方天画斩 / 魔神降世"),
+    HonorHero("孙悟空", "齐天大圣", "刺客/战士", "西游", "俺老孙来也！", "护身咒法 / 如意金箍"),
+    HonorHero("小乔", "恋之微风", "法师", "江东", "小乔要努力变强！", "绽放之舞 / 星华缭乱"),
+    HonorHero("王昭君", "冰雪之华", "法师", "长安", "凛冬已至。", "凋零冰晶 / 凛冬已至"),
+)
+
+private val honorRanks = listOf(
+    "倔强青铜 · Ⅲ/Ⅱ/Ⅰ",
+    "秩序白银 · Ⅲ/Ⅱ/Ⅰ",
+    "荣耀黄金 · Ⅳ/Ⅲ/Ⅱ/Ⅰ",
+    "尊贵铂金 · Ⅳ/Ⅲ/Ⅱ/Ⅰ",
+    "永恒钻石 · Ⅴ~Ⅰ",
+    "至尊星耀 · Ⅴ~Ⅰ",
+    "最强王者 · 0~49星",
+    "荣耀王者 · 50~99星",
+    "传奇王者 · 100星+",
 )
 
 private val honorQuotes = listOf(
@@ -100,10 +121,10 @@ private val honorQuotes = listOf(
 
 @Composable
 private fun HonorDiamondIcon(
-    size: Int,
+    diamondSize: Int,
     color: Color = Color(0xFFE8B84B)
 ) {
-    Canvas(modifier = Modifier.size(size.dp)) {
+    Canvas(modifier = Modifier.size(diamondSize.dp)) {
         val c = center
         val s = size.minDimension * 0.42f
         val outer = Path().apply {
@@ -135,6 +156,7 @@ fun HonorGuideScreen() {
         tint = HazeTint(colorScheme.surface.copy(0.8f))
     )
     var quoteIndex by remember { mutableIntStateOf((0..honorQuotes.lastIndex).random()) }
+    var randomHero by remember { mutableStateOf<HonorHero?>(null) }
 
     Scaffold(
         topBar = {
@@ -230,6 +252,133 @@ fun HonorGuideScreen() {
             }
 
             item {
+                // 随机英雄 · 摇一摇
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = Color(0xFF152A4D)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            HonorDiamondIcon(18)
+                            Spacer(Modifier.size(8.dp))
+                            Text(
+                                text = "荣耀小工具 · 随机英雄",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFE8B84B)
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "摇一摇",
+                                fontSize = 12.sp,
+                                color = Color(0xFFE8B84B),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0x33E8B84B))
+                                    .clickable { randomHero = honorHeroes.random() }
+                                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        if (randomHero != null) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Brush.linearGradient(
+                                                listOf(Color(0xFFE8B84B), Color(0xFF9C6B12))
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = randomHero!!.name.take(1),
+                                        color = Color(0xFF0A1220),
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(Modifier.size(12.dp))
+                                Column {
+                                    Text(
+                                        text = "${randomHero!!.name} · ${randomHero!!.title}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFFFD97A)
+                                    )
+                                    Text(
+                                        text = "${randomHero!!.role} · ${randomHero!!.skill}",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFB8C4DC)
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "点击「摇一摇」，随机召唤一位英雄",
+                                fontSize = 13.sp,
+                                color = Color(0xFF8A94AD)
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                // 段位对照表
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.defaultColors(
+                        color = Color(0xFF152A4D)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            HonorDiamondIcon(18)
+                            Spacer(Modifier.size(8.dp))
+                            Text(
+                                text = "荣耀小工具 · 段位对照",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFE8B84B)
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        honorRanks.forEach { rank ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Canvas(modifier = Modifier.size(6.dp)) {
+                                    drawCircle(color = Color(0xFFE8B84B))
+                                }
+                                Spacer(Modifier.size(8.dp))
+                                Text(
+                                    text = rank,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFFE8EAF2)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.defaultColors(
@@ -271,7 +420,9 @@ fun HonorGuideScreen() {
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            item {
+                Spacer(Modifier.height(24.dp))
+            }
         }
     }
 }

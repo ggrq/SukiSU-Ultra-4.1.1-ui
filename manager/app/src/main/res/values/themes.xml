@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 王者荣耀主题：暗夜峡谷底色 + 荣耀金点缀 -->
     <style name="Theme.KernelSU" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges</item>
+        <item name="android:windowBackground">@color/honor_window_bg</item>
+        <item name="android:colorAccent">@color/honor_gold</item>
+        <item name="android:navigationBarColor">@color/honor_abyss</item>
+        <item name="android:statusBarColor">@color/honor_abyss</item>
     </style>
 
     <style name="Theme.KernelSU.WebUI" parent="Theme.KernelSU">

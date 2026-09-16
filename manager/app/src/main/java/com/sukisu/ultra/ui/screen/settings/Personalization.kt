@@ -126,7 +126,7 @@ fun Personalization() {
                         stringResource(id = R.string.settings_theme_mode_monet_dark),
                     )
                     var themeMode by rememberSaveable {
-                        mutableIntStateOf(prefs.getInt("color_mode", 0))
+                        mutableIntStateOf(prefs.getInt("color_mode", 3))
                     }
                     SuperDropdown(
                         title = stringResource(id = R.string.settings_theme),
@@ -152,25 +152,25 @@ fun Personalization() {
                     ) {
                         val colorItems = listOf(
                             stringResource(id = R.string.settings_key_color_default),
-                            stringResource(id = R.string.color_blue),
-                            stringResource(id = R.string.color_red),
-                            stringResource(id = R.string.color_green),
-                            stringResource(id = R.string.color_purple),
-                            stringResource(id = R.string.color_orange),
-                            stringResource(id = R.string.color_teal),
-                            stringResource(id = R.string.color_pink),
-                            stringResource(id = R.string.color_brown),
+                            stringResource(id = R.string.color_honor_gold),
+                            stringResource(id = R.string.color_honor_blue),
+                            stringResource(id = R.string.color_honor_red),
+                            stringResource(id = R.string.color_honor_purple),
+                            stringResource(id = R.string.color_honor_ice),
+                            stringResource(id = R.string.color_honor_green),
+                            stringResource(id = R.string.color_honor_amber),
+                            stringResource(id = R.string.color_honor_darkred),
                         )
                         val colorValues = listOf(
                             0,
-                            Color(0xFF1A73E8).toArgb(),
-                            Color(0xFFEA4335).toArgb(),
-                            Color(0xFF34A853).toArgb(),
-                            Color(0xFF9333EA).toArgb(),
-                            Color(0xFFFB8C00).toArgb(),
-                            Color(0xFF009688).toArgb(),
-                            Color(0xFFE91E63).toArgb(),
-                            Color(0xFF795548).toArgb(),
+                            Color(0xFFE8B84B).toArgb(),
+                            Color(0xFF2E6BB0).toArgb(),
+                            Color(0xFFC0392B).toArgb(),
+                            Color(0xFF6C4BB0).toArgb(),
+                            Color(0xFF4FC3F7).toArgb(),
+                            Color(0xFF2E8B57).toArgb(),
+                            Color(0xFFFFB300).toArgb(),
+                            Color(0xFFB71C1C).toArgb(),
                         )
                         var keyColorIndex by rememberSaveable {
                             mutableIntStateOf(

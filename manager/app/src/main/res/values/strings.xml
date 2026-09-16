@@ -498,4 +498,12 @@
     <string name="icon_switch_title">Alternate icon</string>
     <string name="icon_switch_summary">Change the launcher icon to KernelSU\'s icon</string>
     <string name="refresh">Refresh</string>
+    <string name="color_honor_gold">荣耀金</string>
+    <string name="color_honor_blue">峡谷蓝</string>
+    <string name="color_honor_red">血橙红</string>
+    <string name="color_honor_purple">暗夜紫</string>
+    <string name="color_honor_ice">冰霜蓝</string>
+    <string name="color_honor_green">翡翠绿</string>
+    <string name="color_honor_amber">琥珀黄</string>
+    <string name="color_honor_darkred">赤焰红</string>
 </resources>
