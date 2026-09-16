@@ -11,6 +11,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -43,10 +47,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -135,6 +146,9 @@ fun HomePager(
             overscrollEffect = null,
         ) {
             item {
+                HonorHeroBanner()
+            }
+            item {
                 val isManager = Natives.isManager
                 val ksuVersion = if (isManager) Natives.version else null
                 val lkmMode = ksuVersion?.let {
@@ -179,6 +193,10 @@ fun HomePager(
                         themeMode = themeMode
                     )
 
+                    HonorGuideEntryCard(
+                        onClick = { navigator.push(Route.HonorGuide) }
+                    )
+
                     if (checkUpdate) {
                         UpdateCard(themeMode)
                     }
@@ -188,6 +206,137 @@ fun HomePager(
                 }
                 Spacer(Modifier.height(bottomInnerPadding))
             }
+        }
+    }
+}
+
+@Composable
+private fun HonorHeroBanner() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .clip(RoundedCornerShape(24.dp))
+    ) {
+        Image(
+            painter = painterResource(R.drawable.honor_bg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0x33060B18), Color(0xE60A1220))
+                    )
+                )
+        )
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            // 右上角王者荣耀风格菱形徽记
+            val diamondSize = 96.dp.toPx()
+            val centerX = size.width - 70.dp.toPx()
+            val centerY = 70.dp.toPx()
+            val path = Path().apply {
+                moveTo(centerX, centerY - diamondSize / 2)
+                lineTo(centerX + diamondSize / 2, centerY)
+                lineTo(centerX, centerY + diamondSize / 2)
+                lineTo(centerX - diamondSize / 2, centerY)
+                close()
+            }
+            drawPath(path, color = Color(0x22E8B84B))
+            drawPath(path, color = Color(0xFFE8B84B), style = Stroke(width = 3.dp.toPx()))
+            // 菱形内剑刃
+            val blade = Path().apply {
+                moveTo(centerX, centerY - diamondSize / 3)
+                lineTo(centerX + diamondSize / 5, centerY)
+                lineTo(centerX, centerY + diamondSize / 3)
+                lineTo(centerX - diamondSize / 5, centerY)
+                close()
+            }
+            drawPath(blade, color = Color(0xFFE8B84B))
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
+        ) {
+            Text(
+                text = "KernelSU 荣耀版",
+                color = Color(0xFFE8B84B),
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "HONOR OF KERNEL · 荣耀守护者",
+                color = Color(0xFFB8C4DC),
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun HonorGuideEntryCard(
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        showIndication = true,
+        pressFeedbackType = PressFeedbackType.Tilt
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Canvas(modifier = Modifier.size(44.dp)) {
+                val c = center
+                val s = size.minDimension * 0.42f
+                val path = Path().apply {
+                    moveTo(c.x, c.y - s)
+                    lineTo(c.x + s, c.y)
+                    lineTo(c.x, c.y + s)
+                    lineTo(c.x - s, c.y)
+                    close()
+                }
+                drawPath(path, color = Color(0xFFE8B84B))
+                val inner = Path().apply {
+                    moveTo(c.x, c.y - s * 0.45f)
+                    lineTo(c.x + s * 0.28f, c.y)
+                    lineTo(c.x, c.y + s * 0.45f)
+                    lineTo(c.x - s * 0.28f, c.y)
+                    close()
+                }
+                drawPath(inner, color = Color(0xFF0A1220))
+            }
+            Spacer(Modifier.size(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "荣耀图鉴",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFE8B84B)
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "王者英雄 · 定位一览 · 荣耀小工具",
+                    fontSize = 12.sp,
+                    color = colorScheme.onSurfaceVariantSummary
+                )
+            }
+            Icon(
+                imageVector = MiuixIcons.Link,
+                tint = colorScheme.onSurface,
+                contentDescription = null
+            )
         }
     }
 }
@@ -321,8 +470,8 @@ private fun StatusCard(
                         colors = CardDefaults.defaultColors(
                             color = when {
                                 isDynamicColor -> colorScheme.secondaryContainer
-                                isInDarkTheme(themeMode) -> Color(0xFF1A3825)
-                                else -> Color(0xFFDFFAE4)
+                                isInDarkTheme(themeMode) -> Color(0xFF152A4D)
+                                else -> Color(0xFFF5EBD3)
                             }
                         ),
                         onClick = {
@@ -346,7 +495,7 @@ private fun StatusCard(
                                     tint = if (isDynamicColor) {
                                         colorScheme.primary.copy(alpha = 0.8f)
                                     } else {
-                                        Color(0xFF36D167)
+                                        Color(0xFFE8B84B)
                                     },
                                     contentDescription = null
                                 )
@@ -402,7 +551,7 @@ private fun StatusCard(
                                     text = getSuperuserCount().toString(),
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = colorScheme.onSurface,
+                                    color = Color(0xFFE8B84B),
                                 )
                             }
                         }
@@ -432,7 +581,7 @@ private fun StatusCard(
                                     text = getModuleCount().toString(),
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = colorScheme.onSurface,
+                                    color = Color(0xFFE8B84B),
                                 )
                             }
                         }

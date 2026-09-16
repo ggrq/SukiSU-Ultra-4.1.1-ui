@@ -58,6 +58,7 @@ import com.sukisu.ultra.ui.screen.AboutScreen
 import com.sukisu.ultra.ui.screen.AppProfileScreen
 import com.sukisu.ultra.ui.screen.AppProfileTemplateScreen
 import com.sukisu.ultra.ui.screen.ExecuteModuleActionScreen
+import com.sukisu.ultra.ui.screen.HonorGuideScreen
 import com.sukisu.ultra.ui.screen.FlashScreen
 import com.sukisu.ultra.ui.screen.HomePager
 import com.sukisu.ultra.ui.screen.InstallScreen
@@ -93,7 +94,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalActivity.current ?: this
             val prefs = context.getSharedPreferences("settings", MODE_PRIVATE)
-            var colorMode by remember { mutableIntStateOf(prefs.getInt("color_mode", 0)) }
+            var colorMode by remember { mutableIntStateOf(prefs.getInt("color_mode", 3)) }
             var keyColorInt by remember { mutableIntStateOf(prefs.getInt("key_color", 0)) }
             val keyColor = remember(keyColorInt) { if (keyColorInt == 0) null else Color(keyColorInt) }
 
@@ -120,7 +121,7 @@ class MainActivity : ComponentActivity() {
 
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     when (key) {
-                        "color_mode" -> colorMode = prefs.getInt("color_mode", 0)
+                        "color_mode" -> colorMode = prefs.getInt("color_mode", 3)
                         "key_color" -> keyColorInt = prefs.getInt("key_color", 0)
                     }
                 }
@@ -167,6 +168,7 @@ class MainActivity : ComponentActivity() {
                             entryProvider = entryProvider {
                                 entry<Route.Main> { MainScreen() }
                                 entry<Route.About> { AboutScreen() }
+                                entry<Route.HonorGuide> { HonorGuideScreen() }
                                 entry<Route.AppProfileTemplate> { AppProfileTemplateScreen() }
                                 entry<Route.TemplateEditor> { key -> TemplateEditorScreen(key.template, key.readOnly) }
                                 entry<Route.AppProfile> { key -> AppProfileScreen(key.packageName) }

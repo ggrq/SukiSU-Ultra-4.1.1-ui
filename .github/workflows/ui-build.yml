@@ -1,0 +1,74 @@
+name: UI Build (Honor of Kings theme)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "ui-honor" ]
+    paths:
+      - '.github/workflows/ui-build.yml'
+      - 'manager/**'
+
+jobs:
+  build-manager:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./manager
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: >-
+            platform-tools
+            build-tools;36.1.0
+            platforms;android-36
+            ndk;29.0.14206865
+            cmake;3.22.1
+
+      - name: Generate signing key
+        run: |
+          keytool -genkeypair \
+            -alias honor \
+            -keyalg RSA -keysize 2048 \
+            -validity 10000 \
+            -storepass honorpass \
+            -keypass honorpass \
+            -dname "CN=Honor Build" \
+            -storetype JKS \
+            -keystore honor.jks
+          {
+            echo KEYSTORE_FILE='honor.jks'
+            echo KEYSTORE_PASSWORD='honorpass'
+            echo KEY_ALIAS='honor'
+            echo KEY_PASSWORD='honorpass'
+          } >> gradle.properties
+
+      - name: Build with Gradle
+        run: ./gradlew clean assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: honor-manager
+          path: manager/app/build/outputs/apk/release/*.apk
+
+      - name: Upload mappings
+        uses: actions/upload-artifact@v4
+        with:
+          name: honor-mappings
+          path: manager/app/build/outputs/mapping/release/

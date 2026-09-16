@@ -16,23 +16,26 @@ fun KernelSUTheme(
     content: @Composable () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
+    // 王者荣耀主题：默认使用荣耀金作为主色
+    val honorGold = Color(0xFFE8B84B)
+    val effectiveKeyColor = keyColor ?: honorGold
     val controller = when (colorMode) {
         1 -> ThemeController(ColorSchemeMode.Light)
         2 -> ThemeController(ColorSchemeMode.Dark)
         3 -> ThemeController(
             ColorSchemeMode.MonetSystem,
-            keyColor = keyColor,
+            keyColor = effectiveKeyColor,
             isDark = isDark
         )
 
         4 -> ThemeController(
             ColorSchemeMode.MonetLight,
-            keyColor = keyColor,
+            keyColor = effectiveKeyColor,
         )
 
         5 -> ThemeController(
             ColorSchemeMode.MonetDark,
-            keyColor = keyColor,
+            keyColor = effectiveKeyColor,
         )
 
         else -> ThemeController(ColorSchemeMode.System)
