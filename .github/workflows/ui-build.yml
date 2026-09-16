@@ -40,22 +40,14 @@ jobs:
             ndk;29.0.14206865
             cmake;3.22.1
 
-      - name: Generate signing key
+      - name: Restore signing key
         run: |
-          keytool -genkeypair \
-            -alias honor \
-            -keyalg RSA -keysize 2048 \
-            -validity 10000 \
-            -storepass honorpass \
-            -keypass honorpass \
-            -dname "CN=Honor Build" \
-            -storetype JKS \
-            -keystore honor.jks
+          echo "${{ secrets.HONOR_KEYSTORE_B64 }}" | base64 -d > honor-release.jks
           {
-            echo KEYSTORE_FILE='honor.jks'
-            echo KEYSTORE_PASSWORD='honorpass'
-            echo KEY_ALIAS='honor'
-            echo KEY_PASSWORD='honorpass'
+            echo KEYSTORE_FILE='honor-release.jks'
+            echo KEYSTORE_PASSWORD='${{ secrets.HONOR_KSPASS }}'
+            echo KEY_ALIAS='${{ secrets.HONOR_ALIAS }}'
+            echo KEY_PASSWORD='${{ secrets.HONOR_KPASS }}'
           } >> gradle.properties
 
       - name: Build with Gradle
