@@ -45,11 +45,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -162,6 +165,16 @@ fun HomePager(
                 val lkmMode = ksuVersion?.let {
                     if (kernelVersion.isGKI()) Natives.isLkmMode else null
                 }
+                // 兼容模式：非内核认证管理器时，通过 root shell + ksud 探测内核部署状态
+                var compatInfo by remember { mutableStateOf<KsuCompatInfo?>(null) }
+                var compatProbing by remember { mutableStateOf(isManager) }
+                LaunchedEffect(isManager) {
+                    if (!isManager) {
+                        compatInfo = detectKsuCompat()
+                        compatProbing = false
+                    }
+                }
+                val compatMode = !isManager && compatInfo?.isRoot == true && compatInfo?.ksudReady == true
                 val pageState = LocalPagerState.current
                 val coroutineScope = rememberCoroutineScope()
 
@@ -183,8 +196,39 @@ fun HomePager(
                             themeMode
                         )
                     }
+                    if (compatProbing) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.defaultColors(color = Color(0xFF152A4D))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Canvas(modifier = Modifier.size(10.dp)) {
+                                    val c = center
+                                    val s = size.minDimension * 0.42f
+                                    val p = Path().apply {
+                                        moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                                    }
+                                    drawPath(p, color = Color(0xFFE8B84B))
+                                }
+                                Spacer(Modifier.size(8.dp))
+                                Text(
+                                    text = "正在探测内核状态…",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFFB8C4DC)
+                                )
+                            }
+                        }
+                    }
                     StatusCard(
                         kernelVersion, ksuVersion, lkmMode,
+                        compatMode = compatMode,
+                        compatKmi = compatInfo?.kmi.orEmpty(),
+                        compatModuleCount = compatInfo?.moduleCount ?: 0,
                         onClickInstall = {
                             navigator.push(Route.Install)
                         },
@@ -613,6 +657,9 @@ private fun StatusCard(
     kernelVersion: KernelVersion,
     ksuVersion: Int?,
     lkmMode: Boolean?,
+    compatMode: Boolean = false,
+    compatKmi: String = "",
+    compatModuleCount: Int = 0,
     onClickInstall: () -> Unit = {},
     onClickSuperuser: () -> Unit = {},
     onclickModule: () -> Unit = {},
@@ -622,6 +669,62 @@ private fun StatusCard(
         modifier = Modifier
     ) {
         when {
+            compatMode -> {
+                Card(
+                    colors = CardDefaults.defaultColors(
+                        color = if (isInDarkTheme(themeMode)) Color(0xFF152A4D) else Color(0xFFF5EBD3)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Canvas(modifier = Modifier.size(12.dp)) {
+                                val c = center
+                                val s = size.minDimension * 0.42f
+                                val p = Path().apply {
+                                    moveTo(c.x, c.y - s); lineTo(c.x + s, c.y); lineTo(c.x, c.y + s); lineTo(c.x - s, c.y); close()
+                                }
+                                drawPath(p, color = Color(0xFFE8B84B))
+                            }
+                            Spacer(Modifier.size(7.dp))
+                            Text(
+                                text = "内核已部署 · 兼容模式",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFFE8B84B)
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = "Root 正常 · 已识别已修补的 boot · KMI: ${compatKmi.ifBlank { "未知" }}",
+                            fontSize = 13.sp,
+                            color = if (isInDarkTheme(themeMode)) Color(0xFFB8C4DC) else Color(0xFF5A6478)
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = "模块 ${compatModuleCount} 个 · root 授权由原版 KernelSU 管理器统一管理",
+                            fontSize = 12.sp,
+                            color = if (isInDarkTheme(themeMode)) Color(0xFF8A94AD) else Color(0xFF7A8499)
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0x33E8B84B), Color(0xFFE8B84B), Color(0x33E8B84B))
+                                    )
+                                )
+                        )
+                    }
+                }
+            }
+
             ksuVersion != null -> {
                 val safeMode = when {
                     Natives.isSafeMode -> " [${stringResource(id = R.string.safe_mode)}]"
