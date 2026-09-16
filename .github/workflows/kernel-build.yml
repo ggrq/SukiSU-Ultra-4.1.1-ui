@@ -1,0 +1,52 @@
+name: Build Honor Manager Kernel (LKM android12-5.10)
+
+# 用 SukiSU-Ultra v4.1.1 官方 kernel 源码 + 官方 DDK 容器编译 kernelsu.ko，
+# 并把内核识别的管理器签名参数替换为王者荣耀魔改版（固定签名）：
+#   KSU_EXPECTED_SIZE = 0x381
+#   KSU_EXPECTED_HASH = bb5a49daeecc40165ba287c0f80324b6063ef21629e199af664c7a82f9c82b01
+#   KSU_MANAGER_PACKAGE = com.sukisu.ultra
+# 刷入后，内核只认魔改版为唯一 KernelSU 管理器（完全替代原版）。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ kernel-build ]
+
+jobs:
+  build-lkm:
+    name: Build kernelsu.ko for Redmi K50 (android12-5.10)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ylarod/ddk:android12-5.10-20251104
+      options: --privileged
+
+    steps:
+      - name: Checkout SukiSU-Ultra v4.1.1 source
+        uses: actions/checkout@v4
+        with:
+          repository: SukiSU-Ultra/SukiSU-Ultra
+          ref: v4.1.1
+          path: SukiSU-Ultra
+
+      - name: Build kernelsu.ko with honor-manager signature
+        run: |
+          git config --global --add safe.directory /github/workspace/SukiSU-Ultra
+          cd SukiSU-Ultra/kernel
+
+          echo "=== Building kernelsu.ko (EXPECTED_SIZE=0x381, honor package) ==="
+          CONFIG_KSU=m CONFIG_KSU_MANUAL_SU=y CC=clang make \
+            KSU_EXPECTED_SIZE=0x381 \
+            KSU_EXPECTED_HASH=bb5a49daeecc40165ba287c0f80324b6063ef21629e199af664c7a82f9c82b01 \
+            KSU_MANAGER_PACKAGE=com.sukisu.ultra
+
+          echo "=== Build completed ==="
+          mkdir -p /github/workspace/out
+          cp kernelsu.ko /github/workspace/out/android12-5.10_honor_kernelsu.ko
+          ls -la /github/workspace/out/
+          file /github/workspace/out/android12-5.10_honor_kernelsu.ko
+
+      - name: Upload kernelsu.ko artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android12-5.10-honor-lkm
+          path: /github/workspace/out/android12-5.10_honor_kernelsu.ko
