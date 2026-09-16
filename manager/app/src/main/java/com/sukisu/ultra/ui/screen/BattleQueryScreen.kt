@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -89,8 +90,8 @@ private val HonorDim = Color(0xFF8A94AD)
 private val HonorSub = Color(0xFFB8C4DC)
 
 @Composable
-private fun BattleDiamond(size: Int, color: Color = HonorGold) {
-    Canvas(modifier = Modifier.size(size.dp)) {
+private fun BattleDiamond(diamondSize: Int, color: Color = HonorGold) {
+    Canvas(modifier = Modifier.size(diamondSize.dp)) {
         val c = center
         val s = size.minDimension * 0.42f
         val outer = Path().apply {
@@ -440,9 +441,9 @@ fun BattleQueryScreen() {
                                                 modifier = Modifier
                                                     .size(26.dp)
                                                     .clip(RoundedCornerShape(8.dp))
-                                                    .background(
-                                                        if (h.rank <= 3) Brush.linearGradient(listOf(HonorGold, HonorGoldDeep))
-                                                        else Color(0x33060B18)
+                                                    .then(
+                                                        if (h.rank <= 3) Modifier.background(Brush.linearGradient(listOf(HonorGold, HonorGoldDeep)))
+                                                        else Modifier.background(Color(0x33060B18))
                                                     ),
                                                 contentAlignment = Alignment.Center
                                             ) {

@@ -9,6 +9,7 @@ import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.nio.charset.Charset
 
 /**
  * 峡谷战绩查询（第三方数据接口 wv.kloping.top）
